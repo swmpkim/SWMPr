@@ -3,7 +3,7 @@
 #' Based on the clearskycalculator.com quantum sensor model
 #'
 #' @param doy Julian day of year  
-#' @param time_hrs time of day, as whole or decimal hours  
+#' @param time_hrs time of day, in local standard time, as whole or decimal hours  
 #' @param rh relative humidity, percent
 #' @param temp temperature, degrees Celsius
 #' @param bp_mb barometric pressure, millibars
