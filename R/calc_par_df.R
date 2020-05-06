@@ -1,7 +1,19 @@
+# this is not yet set up as a function
+# originally it was a function that applied calc_modeled_par() to a 
+# whole data frame
+# but i wonder if they could be combined into one function?
 
-# inputs needs to be:
-# data: swmpr object
+# possible problem: column names are hard-coded to swmp column names
+# which is great for those of us in swmp
+# but is there a way to allow more flexible inputs, without requiring 
+# a zillion function arguments?
+
+
+
+# inputs need to be:
+# data: data frame, with swmp column names.... may not have to be an actual swmpr object?
 # station_code: SWMP station code; if NULL, lat, long, and longTZ must be provided
+# hourly: option to only use readings at the top of the hour; better for lots of data; set default to TRUE
 
 dat <- data
 
@@ -25,15 +37,22 @@ if(!is.null(station_code)){
 
 #### modify data frame
 
+# dat <- qaqc(apaebmet)
+
+
 cols_to_keep <- c("datetimestamp", "atemp", "rh", "bp", "totpar")
 dat <- dat[ , names(dat) %in% cols_to_keep]
 
 dat$date <- as.Date(substr(as.character(dat$datetimestamp), start = 1, stop = 10))
 dat$time_hrs <- as.numeric(substr(as.character(dat$datetimestamp), start = 12, stop = 13))
-dat$time_mins <- substr(as.character(dat$datetimestamp), start = 15, stop = 16)
+dat$time_mins <- as.numeric(substr(as.character(dat$datetimestamp), start = 15, stop = 16))
+dat$time_hrs <- dat$time_hrs + dat$time_mins/60
 
-# only keep hourly readings
-dat2 <- dat[dat$time_mins == "00", ]
+# only keep hourly readings if an option is set
+if(hourly == TRUE){
+  dat2 <- dat[dat$time_mins == 0, ]
+} else {dat2 <- dat}
+
 
 # pull out julian day of year
 # leap years go from 1-366 (doy 60 = Feb 29); 
@@ -49,17 +68,18 @@ dat2$longTZ <- longTZ
 
 # is it really this simple??? getting some NaNs where i wouldn't expect them
 # but otherwise looks okay
-dat2$calc_par <- mapply(calc_modeled_par, 
-         doy = dat2$doy,
-         time_hrs = dat2$time_hrs,
-         rh = dat2$rh,
-         temp = dat2$atemp,
-         bp_mb = dat2$bp,
-         lat_decdeg = dat2$lat_decdeg,
-         long_decdeg = dat2$long_decdeg,
-         longTZ = dat2$longTZ)
+calc_par <- with(dat2, mapply(calc_modeled_par,
+                  doy = doy,
+                  time_hrs = time_hrs,
+                  rh = rh,
+                  temp = atemp,
+                  bp_mb = bp,
+                  lat_decdeg = lat_decdeg,
+                  long_decdeg = long_decdeg,
+                  longTZ = longTZ)
+     )
 
-
+return(calc_par)
 
 # this is working
 # dat2 %>%
